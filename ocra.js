@@ -1,238 +1,283 @@
-//  This an example implementation of OCRA.
-//  RFC 6287 
-//  based on ocra java reference implementation
-//  from https://tools.ietf.org/html/rfc6287
+/*
+ * This an implementation of OCRA - OATH Challenge-Response Algorithm 
+ * based on ocra java reference implementation
+ * from https://tools.ietf.org/html/rfc6287
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ */
 
-// Convert a hex string to a byte array
-function hexStr2Bytes(hex) {
-    for (var bytes = [], c = 0; c < hex.length; c += 2)
-    bytes.push(parseInt(hex.substr(c, 2), 16));
-    return bytes;
-}
+var OCRA = {
 
-// Convert a byte array to a hex string
-function bytesToHexStr(bytes) {
-    for (var hex = [], i = 0; i < bytes.length; i++) {
-        hex.push((bytes[i] >>> 4).toString(16));
-        hex.push((bytes[i] & 0xF).toString(16));
-    }
-    return hex.join("");
-}
+   // OCRA size modulo : 0 1 2 3 4 5 6 7 8
+   DIGITS_POWER : [1,10,100,1000,10000,100000,1000000,10000000,100000000],
 
-function ab2str(buf) {
-  return String.fromCharCode.apply(null, new Uint16Array(buf));
-}
+   // Convert a hex string to a byte array
+   hexStr2Bytes : function(hex) 
+   {
+       for (var bytes = [], c = 0; c < hex.length; c += 2)
+       bytes.push(parseInt(hex.substr(c, 2), 16));
+       return bytes;
+   },
 
-function str2ab(str) {
-  var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
-  var bufView = new Uint16Array(buf);
-  for (var i=0, strLen=str.length; i<strLen; i++) {
-    bufView[i] = str.charCodeAt(i);
-  }
-  return buf;
-}
+   // Convert a byte array to a hex string
+   bytesToHexStr : function(bytes) 
+   {
+       for (var hex = [], i = 0; i < bytes.length; i++) {
+	   hex.push((bytes[i] >>> 4).toString(16));
+	   hex.push((bytes[i] & 0xF).toString(16));
+       }
+       return hex.join("");
+   },
 
-//from https://jswebcrypto.azurewebsites.net/demo.html#/hmac
-function hmac_sha1(crypto, key, text)
-{
-    var hmacSha = {name: 'hmac', hash: {name: crypto}};
-    var keyBuf = str2ab(key);
-    var buf = str2ab(text);
+   // convert ArrayBuffer to String
+   ab2str : function (buf) 
+   {
+     return String.fromCharCode.apply(null, new Uint8Array(buf));
+   },
 
-    crypto.subtle.importKey("raw", keyBuf, hmacSha, true, ["sign", "verify"]).then(function(result) {
-       crypto.subtle.sign(hmacSha, result, buf).then(function(result) {
-	  var hash = arrayBufferToHexString(new Uint8Array(result));
-          return hash;
-       })
-    });
-    return null;
-}
+   // convert String to ArrayBuffer 
+   str2ab : function(str) {
+     if (typeof str === 'string' || str instanceof String)
+     {
+     var buf = new ArrayBuffer(str.length); 
+     var bufView = new Uint8Array(buf);
+     for (var i=0, strLen=str.length; i<strLen; i++) {
+       bufView[i] = str.charCodeAt(i);
+     }
+     return buf;
+     }
+     else
+        return null;
+   },
 
-// 0 1 2 3 4 5 6 7 8
-var DIGITS_POWER = [1,10,100,1000,10000,100000,1000000,10000000,100000000 ];
+   // append ArrayBuffer to existing ArrayBuffer
+   ArrayConcat : function(buffer1, buffer2) 
+   {
+      var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+      tmp.set(new Uint8Array(buffer1), 0);
+      tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+      return tmp.buffer;
+   },
 
-function generateOCRA(ocraSuite, key, counter, question, password, sessionInformation, timeStamp) {
-          var codeDigits = 0;
-          var crypto = "";
-          var result = null;
-          var ocraSuiteLength = ocraSuite.length;
-          var counterLength = 0;
-          var questionLength = 0;
-          var passwordLength = 0;
-          var sessionInformationLength = 0;
-          var timeStampLength = 0;
+   // hmac_hash with Web Cryptography API
+   // https://www.w3.org/TR/WebCryptoAPI/
+   //
+   // this api are supported on chrome 49+, firefox 47+, edge, and ms prefix old version on ie11
+   // http://caniuse.com/#feat=cryptography 
+   //
+   // based on sample from https://jswebcrypto.azurewebsites.net/demo.html#/hmac
+   hmac_hash : function(crypto, key, text)
+   {
+       var hmacSha = {name: 'hmac', hash: {name: crypto}};
+       var keyBuf = key;
+       var buf = this.str2ab(text);
 
-          // The OCRASuites components
-          var CryptoFunction = ocraSuite.split(":")[1];
-          var DataInput = ocraSuite.split(":")[2];
+       crypto.subtle.importKey("raw", keyBuf, hmacSha, true, ["sign", "verify"]).then(function(result) {
+	  crypto.subtle.sign(hmacSha, result, buf).then(function(result) {
+	     var hash = arrayBufferToHexString(new Uint8Array(result));
+	     return hash;
+	  })
+       });
+       return null;
+   },
 
-	  if(CryptoFunction.toLowerCase().indexOf("sha1") > 1)
-              crypto = "SHA-1";
-          if(CryptoFunction.toLowerCase().indexOf("sha256") > 1)
-              crypto = "SHA-256";
-          if(CryptoFunction.toLowerCase().indexOf("sha384") > 1)  // not supported by rfc
-              crypto = "SHA-384";
-          if(CryptoFunction.toLowerCase().indexOf("sha512") > 1)
-              crypto = "SHA-512";
+   // OCRA method
+   generateOCRA : function(ocraSuite, key, counter, question, password, sessionInformation, timeStamp) 
+   {
+       var codeDigits = 0;
+       var crypto = "";
+       var result = null;
+       var ocraSuiteLength = ocraSuite.length;
+       var counterLength = 0;
+       var questionLength = 0;
+       var passwordLength = 0;
+       var sessionInformationLength = 0;
+       var timeStampLength = 0;
 
-          // How many digits should we return
-	  codeDigits = parseInt(CryptoFunction.substring(
-                  CryptoFunction.lastIndexOf("-")+1));
+       // The OCRASuites components
+       var CryptoFunction = ocraSuite.split(":")[1];
+       var DataInput = ocraSuite.split(":")[2];
 
-          // The size of the byte array message to be encrypted
-          // Counter
-          if(DataInput.toLowerCase().startsWith("c")) {
-              // Fix the length of the HEX string
-              while(counter.length() < 16) 
-                     counter = "0" + counter;
-              counterLength=8;
-	  }
+       if(CryptoFunction.toLowerCase().indexOf("sha1") > 1)
+	   crypto = "SHA-1";
+       if(CryptoFunction.toLowerCase().indexOf("sha256") > 1)
+	   crypto = "SHA-256";
+       if(CryptoFunction.toLowerCase().indexOf("sha384") > 1)  // not supported by rfc
+	   crypto = "SHA-384";
+       if(CryptoFunction.toLowerCase().indexOf("sha512") > 1)
+	   crypto = "SHA-512";
 
-          // Question - always 128 bytes
-	  if(DataInput.toLowerCase().startsWith("q") ||
-            (DataInput.toLowerCase().indexOf("-q") >= 0)) {
-              while(question.length() < 256)
-                  question = question + "0";
-              questionLength=128;
-          }
+       // How many digits should we return
+       codeDigits = parseInt(CryptoFunction.substring(
+	       CryptoFunction.lastIndexOf("-")+1));
 
+       // The size of the byte array message to be encrypted
+       // Counter
+       if(DataInput.toLowerCase().startsWith("c")) {
+	   // Fix the length of the HEX string
+	   while(counter.length < 16) 
+		  counter = "0" + counter;
+	   counterLength=8;
+       }
 
-          // Password - sha1
-          if(DataInput.toLowerCase().indexOf("psha1") > 1){
-              while(password.length() < 40)
-                  password = "0" + password;
-              passwordLength=20;
-          }
-
-          // Password - sha256
-          if(DataInput.toLowerCase().indexOf("psha256") > 1){
-              while(password.length() < 64)
-                  password = "0" + password;
-              passwordLength=32;
-          }
-
-          // Password - sha512
-          if(DataInput.toLowerCase().indexOf("psha512") > 1){
-              while(password.length() < 128)
-                  password = "0" + password;
-              passwordLength=64;
-          }
-
-          // sessionInformation - s064
-          if(DataInput.toLowerCase().indexOf("s064") > 1){
-              while(sessionInformation.length() < 128)
-                  sessionInformation = "0" + sessionInformation;
-              sessionInformationLength=64;
-          }
-
-          // sessionInformation - s128
-          if(DataInput.toLowerCase().indexOf("s128") > 1){
-              while(sessionInformation.length() < 256)
-                  sessionInformation = "0" + sessionInformation;
-              sessionInformationLength=128;
-          }
-
-          // sessionInformation - s256
-          if(DataInput.toLowerCase().indexOf("s256") > 1){
-              while(sessionInformation.length() < 512)
-                  sessionInformation = "0" + sessionInformation;
-              sessionInformationLength=256;
-          }
-
-          // sessionInformation - s512
-          if(DataInput.toLowerCase().indexOf("s512") > 1){
-              while(sessionInformation.length() < 1024)
-                  sessionInformation = "0" + sessionInformation;
-              sessionInformationLength=512;
-          }
-
-          // TimeStamp
-          if(DataInput.toLowerCase().startsWith("t") ||
-                  (DataInput.toLowerCase().indexOf("-t") > 1)){
-              while(timeStamp.length() < 16)
-                  timeStamp = "0" + timeStamp;
-              timeStampLength=8;
-          }
-
-	  // create a new array of Uint8Array with lenght of all zone
-          // Remember to add "1" for the "00" byte delimiter
-	  /*
-          var msg = new Uint8Array(ocraSuiteLength +
-                        counterLength +
-                        questionLength +
-                        passwordLength +
-                        sessionInformationLength +
-                        timeStampLength +
-                        1);
-	  */
-
-          // Put the bytes of "ocraSuite" parameters into the message
-          var bArray = str2ab(ocraSuite);
-          //System.arraycopy(bArray, 0, msg, 0, bArray.length);
-	  msg=bArray;
-
-          // Delimiter
-          msg[bArray.length] = 0x00;
-
-          // Put the bytes of "Counter" to the message
-          // Input is HEX encoded
-          if(counterLength > 0 ){
-              bArray = hexStr2Bytes(counter);
-              //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1, bArray.length);
-	      msg.concat(bArray);
-          }
+       // Question - always 128 bytes
+       if(DataInput.toLowerCase().startsWith("q") ||
+	 (DataInput.toLowerCase().indexOf("-q") >= 0)) {
+	   while(question.length < 256)
+	       question = question + "0";
+	   questionLength=128;
+       }
 
 
-          // Put the bytes of "question" to the message
-          // Input is text encoded
-          if(questionLength > 0 ){
-              bArray = hexStr2Bytes(question);
-              //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength, bArray.length);
-	      msg.concat(bArray);
-          }
+       // Password - sha1
+       if(DataInput.toLowerCase().indexOf("psha1") > 1){
+	   while(password.length < 40)
+	       password = "0" + password;
+	   passwordLength=20;
+       }
 
-          // Put the bytes of "password" to the message
-          // Input is HEX encoded
-          if(passwordLength > 0){
-              bArray = hexStr2Bytes(password);
-              //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength +    questionLength, bArray.length);
-	      msg.concat(bArray);
+       // Password - sha256
+       if(DataInput.toLowerCase().indexOf("psha256") > 1){
+	   while(password.length < 64)
+	       password = "0" + password;
+	   passwordLength=32;
+       }
 
-          }
+       // Password - sha512
+       if(DataInput.toLowerCase().indexOf("psha512") > 1){
+	   while(password.length < 128)
+	       password = "0" + password;
+	   passwordLength=64;
+       }
 
-          // Put the bytes of "sessionInformation" to the message
-          // Input is text encoded
-          if(sessionInformationLength > 0 ){
-              bArray = hexStr2Bytes(sessionInformation);
-              //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength +     questionLength + passwordLength, bArray.length);
-	      msg.concat(bArray);
-          }
+       // sessionInformation - s064
+       if(DataInput.toLowerCase().indexOf("s064") > 1){
+	   while(sessionInformation.length < 128)
+	       sessionInformation = "0" + sessionInformation;
+	   sessionInformationLength=64;
+       }
 
-          // Put the bytes of "time" to the message
-          // Input is text value of minutes
-          if(timeStampLength > 0){
-              bArray = hexStr2Bytes(timeStamp);
-              //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength, bArray.length);
-	      msg.concat(bArray);
-          }
+       // sessionInformation - s128
+       if(DataInput.toLowerCase().indexOf("s128") > 1){
+	   while(sessionInformation.length < 256)
+	       sessionInformation = "0" + sessionInformation;
+	   sessionInformationLength=128;
+       }
 
-          bArray = hexStr2Bytes(key);
-          var hash = hmac_sha1(crypto, bArray, msg);
+       // sessionInformation - s256
+       if(DataInput.toLowerCase().indexOf("s256") > 1){
+	   while(sessionInformation.length < 512)
+	       sessionInformation = "0" + sessionInformation;
+	   sessionInformationLength=256;
+       }
 
-          // put selected bytes into result int
-          var offset = hash[hash.length - 1] & 0xf;
+       // sessionInformation - s512
+       if(DataInput.toLowerCase().indexOf("s512") > 1){
+	   while(sessionInformation.length < 1024)
+	       sessionInformation = "0" + sessionInformation;
+	   sessionInformationLength=512;
+       }
 
-          var binary =
-              ((hash[offset] & 0x7f) << 24) |
-              ((hash[offset + 1] & 0xff) << 16) |
-              ((hash[offset + 2] & 0xff) << 8) |
-              (hash[offset + 3] & 0xff);
+       // TimeStamp
+       if(DataInput.toLowerCase().startsWith("t") ||
+	       (DataInput.toLowerCase().indexOf("-t") > 1)){
+	   while(timeStamp.length < 16)
+	       timeStamp = "0" + timeStamp;
+	   timeStampLength=8;
+       }
 
-          var otp = binary % DIGITS_POWER[codeDigits];
+       // create a new array of Uint8Array with lenght of all zone
+       // Remember to add "1" for the "00" byte delimiter
+       var msg = new Uint8Array(ocraSuiteLength +
+		     counterLength +
+		     questionLength +
+		     passwordLength +
+		     sessionInformationLength +
+		     timeStampLength +
+		     1);
 
-          result = otp.toString();
-          while (result.length() < codeDigits) {
-              result = "0" + result;
-          }
-          return result;
+       // Put the bytes of "ocraSuite" parameters into the message
+       var bArray = this.str2ab(ocraSuite);
+       //System.arraycopy(bArray, 0, msg, 0, bArray.length);
+       msg.set(bArray,0);
+
+       // Delimiter
+       msg[bArray.length] = 0x00;
+
+       // Put the bytes of "Counter" to the message
+       // Input is HEX encoded
+       if(counterLength > 0 ){
+	   bArray = this.hexStr2Bytes(counter);
+	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1, bArray.length);
+	   msg.set(bArray,ocraSuiteLength + 1);
+       }
+
+
+       // Put the bytes of "question" to the message
+       // Input is text encoded
+       if(questionLength > 0 ){
+	   bArray = this.hexStr2Bytes(question);
+	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength, bArray.length);
+	   msg.set(bArray,ocraSuiteLength + 1 + counterLength);
+       }
+
+       // Put the bytes of "password" to the message
+       // Input is HEX encoded
+       if(passwordLength > 0){
+	   bArray = this.hexStr2Bytes(password);
+	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength +    questionLength, bArray.length);
+	   msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength);
+
+       }
+
+       // Put the bytes of "sessionInformation" to the message
+       // Input is text encoded
+       if(sessionInformationLength > 0 ){
+	   bArray = this.hexStr2Bytes(sessionInformation);
+	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength +     questionLength + passwordLength, bArray.length);
+	   msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength + passwordLength);
+       }
+
+       // Put the bytes of "time" to the message
+       // Input is text value of minutes
+       if(timeStampLength > 0){
+	   bArray = this.hexStr2Bytes(timeStamp);
+	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength, bArray.length);
+	   msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength);
+       }
+
+       bArray = this.hexStr2Bytes(key);
+       var hash = this.hmac_hash(window.crypto, bArray, msg);
+       if (hash==null) return null;
+
+       // put selected bytes into result int
+       var offset = hash[hash.length - 1] & 0xf;
+
+       var binary =
+	   ((hash[offset] & 0x7f) << 24) |
+	   ((hash[offset + 1] & 0xff) << 16) |
+	   ((hash[offset + 2] & 0xff) << 8) |
+	   (hash[offset + 3] & 0xff);
+
+       var otp = binary % DIGITS_POWER[codeDigits];
+
+       result = otp.toString();
+       while (result.length < codeDigits) {
+	   result = "0" + result;
+       }
+       return result;
+   }
 }
