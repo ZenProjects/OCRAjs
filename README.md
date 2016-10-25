@@ -1,3 +1,5 @@
+# WARNING: this project is under coding...
+
 # OCRAjs - OCRA: OATH Challenge-Response Algorithm implementation in Javascript
 
 This project contains example implementations of the OATH OCRA Challenge Response algorithm for Javascript based [RFC 6287](http://tools.ietf.org/html/rfc6287).
