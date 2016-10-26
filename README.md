@@ -8,9 +8,26 @@ The current version of the OCRA standard can be found here:
 
 http://tools.ietf.org/html/rfc6287
 
-This Javascript implementation are accompanied by a unit test that validates the implementation against the test vectors from the RFC.
+# Use
 
-# Test
+The ocra suite format are defined in [rfc 6287 at §6](https://tools.ietf.org/html/rfc6287#page-8)
+
+```
+var ocraSuite = "OCRA-1:HOTP-SHA1-6:QN08";
+var SEED   = "3132333435363738393031323334353637383930";
+var ocra = OCRA.generateOCRA( ocraSuite,          // ocra suite
+                              seed,               // shared secret key
+                              counter,            // ocra counter 
+                              question,           // question in hex string format
+                              password,           // password string hash
+                              sessionInformation, // session information 
+                              timeStamp);         // timestamp 
+alert(ocra);  // ocra result
+```
+
+# Test Unit
+
+This Javascript implementation are accompanied by a unit test that validates the implementation against the test vectors from the RFC.
 
 Clic on [index.html](https://htmlpreview.github.io/?https://github.com/ZenProjects/OCRAjs/blob/master/index.html) to execute test.
 
