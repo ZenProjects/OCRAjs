@@ -9,3 +9,7 @@ The current version of the OCRA standard can be found here:
 http://tools.ietf.org/html/rfc6287
 
 This Javascript implementation are accompanied by a unit test that validates the implementation against the test vectors from the RFC.
+
+# Test
+
+clic on [index.html](https://htmlpreview.github.io/?https://github.com/ZenProjects/OCRAjs/blob/master/index.html) to execute test.
