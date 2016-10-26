@@ -12,4 +12,6 @@ This Javascript implementation are accompanied by a unit test that validates the
 
 # Test
 
-clic on [index.html](https://htmlpreview.github.io/?https://github.com/ZenProjects/OCRAjs/blob/master/index.html) to execute test.
+Clic on [index.html](https://htmlpreview.github.io/?https://github.com/ZenProjects/OCRAjs/blob/master/index.html) to execute test.
+
+And compare with [reference test vector](https://tools.ietf.org/html/rfc6287#page-34).
