@@ -4,6 +4,14 @@ function println(hLog,msg)
   hLog.insertAdjacentText('beforeend',msg + "\n");
 }
 
+function dechex(number) {
+  if (number < 0) {
+    number = 0xFFFFFFFF + number + 1
+  }
+  return parseInt(number, 10)
+    .toString(16)
+}
+
 function doOCRATest (hLog) {
 
       var ocra = "";
@@ -29,7 +37,7 @@ function doOCRATest (hLog) {
       var sDate = "Mar 25 2008, 12:06:30 GMT";
 
       myDate = Date.parse(sDate);
-      b = myDate/60000;
+      b = Math.floor(myDate/60000);
 
 
       println(hLog,"Time of \"" + sDate + "\" is in");
@@ -40,13 +48,9 @@ function doOCRATest (hLog) {
       println(hLog," is the same as this localized time, \"" + new Date(myDate) + "\"");
 
       println(hLog,"");
-      println(hLog,"Standard 20Byte key: 3132333435363738393031323334353637383930");
-      println(hLog,"Standard 32Byte key: 3132333435363738393031323334353637383930");
-      println(hLog,"                     313233343536373839303132");
-      println(hLog,"Standard 64Byte key: 3132333435363738393031323334353637383930");
-      println(hLog,"                     3132333435363738393031323334353637383930");
-      println(hLog,"                     3132333435363738393031323334353637383930");
-      println(hLog,"                     31323334");
+      println(hLog,"Standard 20Byte key: "+SEED);
+      println(hLog,"Standard 32Byte key: "+SEED32);
+      println(hLog,"Standard 64Byte key: "+SEED64);
 
       println(hLog,"");
       println(hLog,"Plain challenge response");
@@ -64,7 +68,7 @@ function doOCRATest (hLog) {
       timeStamp = "";
       for(i=0; i < 10; i++){
 	  question = "" + i + i + i + i + i + i + i + i;
-	  qHex = parseInt(question).toString(16).toUpperCase();
+	  qHex = dechex(question);
 	  ocra = OCRA.generateOCRA(ocraSuite,
 	                      seed,
 			      counter,
@@ -87,7 +91,7 @@ function doOCRATest (hLog) {
       timeStamp = "";
       for(i=0; i < 10; i++){
 	  counter = "" + i;
-	  qHex = parseInt(question).toString(16).toUpperCase();
+	  qHex = dechex(question);
 	  ocra = OCRA.generateOCRA(ocraSuite,
 			      seed,
 			      counter,
@@ -112,7 +116,7 @@ function doOCRATest (hLog) {
       for(i=0; i < STOP; i++){
 	  question = "" + i + i + i + i + i + i + i + i;
 
-	  qHex = parseInt(question).toString(16).toUpperCase();
+	  qHex = dechex(question);
 	  ocra = OCRA.generateOCRA(ocraSuite,
 			      seed,
 			      counter,
@@ -136,7 +140,7 @@ function doOCRATest (hLog) {
       timeStamp = "";
       for(i=0; i < 10; i++){
 	  question = "" + i + i + i + i + i + i + i + i;
-	  qHex = parseInt(question).toString(16).toUpperCase();
+	  qHex = dechex(question);
 	  counter = "0000" + i;
 	  ocra = OCRA.generateOCRA(ocraSuite,
 	                      seed,
@@ -160,7 +164,7 @@ function doOCRATest (hLog) {
       for(i=0; i < STOP; i++){
 	  question = "" + i + i + i + i + i + i + i + i;
 	  counter = "";
-	  qHex = parseInt(question).toString(16).toUpperCase();
+	  qHex = dechex(question);
 	  ocra = OCRA.generateOCRA(ocraSuite,
 	                      seed,
 			      counter,

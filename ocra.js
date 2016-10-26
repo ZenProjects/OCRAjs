@@ -19,10 +19,87 @@
  *
  */
 
-var OCRA = {
+// https://su12147fct0:12002/ocrajs/index.html
 
-   // OCRA size modulo : 0 1 2 3 4 5 6 7 8
-   DIGITS_POWER : [1,10,100,1000,10000,100000,1000000,10000000,100000000],
+function HmacWeb()
+{
+
+  this.result = null;
+
+   // convert String to Uint8 ArrayBuffer View
+   this.convertStringToArrayBufferView = function(str)
+   {
+     if (typeof str === 'string' || str instanceof String)
+     {
+       var bytes = new Uint8Array(str.length);
+       for (var iii = 0; iii < str.length; iii++) 
+       {
+	   bytes[iii] = str.charCodeAt(iii);
+       }
+
+       return bytes;
+     }
+     else
+       return str;
+   };
+
+
+  this.setResult = function(result)
+  {
+    this.result = new Uint8Array(result);
+  }
+
+  this.setError = function(err)
+  {
+    this.error=err;
+  }
+
+
+  // hmac_hash with Web Cryptography API
+  // https://www.w3.org/TR/WebCryptoAPI/
+  //
+  // this api are supported on chrome 49+, firefox 47+, edge, and ms prefix old version on ie11
+  // http://caniuse.com/#feat=cryptography 
+  //
+  // based on sample from https://jswebcrypto.azurewebsites.net/demo.html#/hmac
+  // and http://qnimate.com/digital-signature-using-web-cryptography-api/
+  this.hmac_hash = function(hashAlgo, hashKey, hashText) 
+  {
+    var hmacSha = {name: 'HMAC', hash: {name: hashAlgo}};
+
+    if (typeof hashKey === 'string' || hashKey instanceof String)
+      var hmacKeyBuf = this.convertStringToArrayBufferView(hashKey);
+    else
+      var hmacKeyBuf = hashKey;
+
+    if (typeof hashText === 'string' || hashText instanceof String)
+      var hmacTextBuf = this.convertStringToArrayBufferView(hashText);
+    else
+      var hmacTextBuf = hashText;
+
+    var promise = null;
+    var _this = this; 
+
+    var hmacresult = {};
+    var crypto = window.crypto || window.msCrypto;
+
+    hash = crypto.subtle.importKey("raw", hmacKeyBuf, hmacSha, true, ["sign", "verify"])
+    .then(function(myCryptoKey) {
+       crypto.subtle.sign(hmacSha, myCryptoKey, hmacKeyBuf)
+       .then(function(result){
+	  _this.result = new Uint8Array(result);
+       })
+       .catch(function(err){
+	 alert(err);
+       });
+    }).catch(function(err){
+	 alert(err);
+    });
+    return this.result;
+  }
+}
+
+var OCRA = {
 
    // Convert a hex string to a byte array
    hexStr2Bytes : function(hex) 
@@ -48,6 +125,23 @@ var OCRA = {
      return String.fromCharCode.apply(null, new Uint8Array(buf));
    },
 
+   // convert String to Uint8 ArrayBuffer View
+   convertStringToArrayBufferView : function(str)
+   {
+     if (typeof str === 'string' || str instanceof String)
+     {
+       var bytes = new Uint8Array(str.length);
+       for (var iii = 0; iii < str.length; iii++) 
+       {
+	   bytes[iii] = str.charCodeAt(iii);
+       }
+
+       return bytes;
+     }
+     else
+       return str;
+   },
+
    // convert String to ArrayBuffer 
    str2ab : function(str) {
      if (typeof str === 'string' || str instanceof String)
@@ -57,7 +151,7 @@ var OCRA = {
      for (var i=0, strLen=str.length; i<strLen; i++) {
        bufView[i] = str.charCodeAt(i);
      }
-     return buf;
+     return bufView;
      }
      else
         return null;
@@ -79,19 +173,31 @@ var OCRA = {
    // http://caniuse.com/#feat=cryptography 
    //
    // based on sample from https://jswebcrypto.azurewebsites.net/demo.html#/hmac
-   hmac_hash : function(crypto, key, text)
+   // and http://qnimate.com/digital-signature-using-web-cryptography-api/
+   hmacWeb_hash : function(hashAlgo, hashKey, hashText)
    {
-       var hmacSha = {name: 'hmac', hash: {name: crypto}};
-       var keyBuf = key;
-       var buf = this.str2ab(text);
+        var hmacweb = new HmacWeb();
+        var hmacresult= hmacweb.hmac_hash(hashAlgo,hashKey,hashText);
+        return hmacresult.result;
+   },
 
-       crypto.subtle.importKey("raw", keyBuf, hmacSha, true, ["sign", "verify"]).then(function(result) {
-	  crypto.subtle.sign(hmacSha, result, buf).then(function(result) {
-	     var hash = arrayBufferToHexString(new Uint8Array(result));
-	     return hash;
-	  })
-       });
-       return null;
+   hmac_hash : function(hashAlgo, hashKey, hashText)
+   {
+    if (typeof hashKey === 'string' || hashKey instanceof String)
+      var hmacKeyBuf = this.convertStringToArrayBufferView(hashKey);
+    else
+      var hmacKeyBuf = hashKey;
+
+    if (typeof hashText === 'string' || hashText instanceof String)
+      var hmacTextBuf = this.convertStringToArrayBufferView(hashText);
+    else
+      var hmacTextBuf = hashText;
+
+
+      var shaObj = new jsSHA(hashAlgo, "ARRAYBUFFER");
+      shaObj.setHMACKey(hmacKeyBuf, "ARRAYBUFFER");
+      shaObj.update(hmacTextBuf);
+      return shaObj.getHMAC("ARRAYBUFFER");
    },
 
    // OCRA method
@@ -106,6 +212,9 @@ var OCRA = {
        var passwordLength = 0;
        var sessionInformationLength = 0;
        var timeStampLength = 0;
+       // OCRA size modulo : 0 1 2 3 4 5 6 7 8
+       var DIGITS_POWER = [1,10,100,1000,10000,100000,1000000,10000000,100000000];
+
 
        // The OCRASuites components
        var CryptoFunction = ocraSuite.split(":")[1];
@@ -201,7 +310,7 @@ var OCRA = {
 
        // create a new array of Uint8Array with lenght of all zone
        // Remember to add "1" for the "00" byte delimiter
-       var msg = new Uint8Array(ocraSuiteLength +
+       var msgArrayBuffer = new ArrayBuffer(ocraSuiteLength +
 		     counterLength +
 		     questionLength +
 		     passwordLength +
@@ -209,29 +318,39 @@ var OCRA = {
 		     timeStampLength +
 		     1);
 
+       // creat view of ab
+       var msg = new Uint8Array(msgArrayBuffer);
+
+       for(var i=0;i<msg.byteLength;i++) msg[i]=0x00;
+
        // Put the bytes of "ocraSuite" parameters into the message
        var bArray = this.str2ab(ocraSuite);
+
        //System.arraycopy(bArray, 0, msg, 0, bArray.length);
        msg.set(bArray,0);
 
        // Delimiter
        msg[bArray.length] = 0x00;
 
+
        // Put the bytes of "Counter" to the message
        // Input is HEX encoded
        if(counterLength > 0 ){
 	   bArray = this.hexStr2Bytes(counter);
 	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1, bArray.length);
-	   msg.set(bArray,ocraSuiteLength + 1);
+	   //msg.set(bArray,ocraSuiteLength + 1);
+	   for (var i=0;i<bArray.length;i++) 
+	      msg [i + ocraSuiteLength + 1] = bArray[i];
        }
-
 
        // Put the bytes of "question" to the message
        // Input is text encoded
        if(questionLength > 0 ){
 	   bArray = this.hexStr2Bytes(question);
 	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength, bArray.length);
-	   msg.set(bArray,ocraSuiteLength + 1 + counterLength);
+	   //msg.set(bArray,ocraSuiteLength + 1 + counterLength);
+	   for (var i=0;i<bArray.length;i++) 
+	      msg [i + ocraSuiteLength + 1 + counterLength] = bArray[i];
        }
 
        // Put the bytes of "password" to the message
@@ -239,8 +358,9 @@ var OCRA = {
        if(passwordLength > 0){
 	   bArray = this.hexStr2Bytes(password);
 	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength +    questionLength, bArray.length);
-	   msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength);
-
+	   //msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength);
+	   for (var i=0;i<bArray.length;i++) 
+	      msg [i + ocraSuiteLength + 1 + counterLength + questionLength] = bArray[i];
        }
 
        // Put the bytes of "sessionInformation" to the message
@@ -248,7 +368,9 @@ var OCRA = {
        if(sessionInformationLength > 0 ){
 	   bArray = this.hexStr2Bytes(sessionInformation);
 	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength +     questionLength + passwordLength, bArray.length);
-	   msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength + passwordLength);
+	   //msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength + passwordLength);
+	   for (var i=0;i<bArray.length;i++) 
+	      msg [i + ocraSuiteLength + 1 + counterLength + questionLength + passwordLength] = bArray[i];
        }
 
        // Put the bytes of "time" to the message
@@ -256,21 +378,25 @@ var OCRA = {
        if(timeStampLength > 0){
 	   bArray = this.hexStr2Bytes(timeStamp);
 	   //System.arraycopy(bArray, 0, msg, ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength, bArray.length);
-	   msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength);
+	   //msg.set(bArray,ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength);
+	   for (var i=0;i<bArray.length;i++) 
+	      msg [i + ocraSuiteLength + 1 + counterLength + questionLength + passwordLength + sessionInformationLength] = bArray[i];
        }
 
        bArray = this.hexStr2Bytes(key);
-       var hash = this.hmac_hash(window.crypto, bArray, msg);
+       var abKey = new Uint8Array(bArray);
+       var msgstr = this.ab2str(msg);
+       var hash = this.hmac_hash(crypto, abKey, msg);
        if (hash==null) return null;
 
        // put selected bytes into result int
-       var offset = hash[hash.length - 1] & 0xf;
+       var offset = hash[hash.byteLength - 1] & 0xf;
 
        var binary =
-	   ((hash[offset] & 0x7f) << 24) |
+	   ((hash[offset + 0] & 0x7f) << 24) |
 	   ((hash[offset + 1] & 0xff) << 16) |
 	   ((hash[offset + 2] & 0xff) << 8) |
-	   (hash[offset + 3] & 0xff);
+	    (hash[offset + 3] & 0xff);
 
        var otp = binary % DIGITS_POWER[codeDigits];
 
