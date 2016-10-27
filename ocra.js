@@ -232,22 +232,16 @@ var OCRA = {
 
      // Password - sha1
      if(DataInput.toLowerCase().indexOf("psha1") > 1){
-       while(password.length < 40)
-         password = "0" + password;
        passwordLength=20;
      }
 
      // Password - sha256
      if(DataInput.toLowerCase().indexOf("psha256") > 1){
-       while(password.length < 64)
-         password = "0" + password;
        passwordLength=32;
      }
 
      // Password - sha512
      if(DataInput.toLowerCase().indexOf("psha512") > 1){
-       while(password.length < 128)
-         password = "0" + password;
        passwordLength=64;
      }
 
