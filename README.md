@@ -29,6 +29,6 @@ alert(ocra);  // ocra result
 
 This Javascript implementation are accompanied by a unit test that validates the implementation against the test vectors from the RFC.
 
-Clic on [index.html](https://cdn.rawgit.com/ZenProjects/OCRAjs/master/index.html) to execute test.
+Clic on [test.html](https://cdn.rawgit.com/ZenProjects/OCRAjs/master/test.html) to execute test.
 
 And compare with [reference test vector](https://tools.ietf.org/html/rfc6287#page-34).
