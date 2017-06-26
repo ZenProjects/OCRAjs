@@ -48,6 +48,9 @@ function doOCRATest (hLog,shaEngine="sjcl") {
       println(hLog," is the same as this localized time, \"" + new Date(myDate) + "\"");
 
       println(hLog,"");
+      println(hLog,"HMAC-SHA Engine "+shaEngine);
+
+	println(hLog,"");
       println(hLog,"Standard 20Byte key: "+SEED);
       println(hLog,"Standard 32Byte key: "+SEED32);
       println(hLog,"Standard 64Byte key: "+SEED64);
