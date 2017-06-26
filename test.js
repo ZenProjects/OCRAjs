@@ -75,7 +75,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+			      "sjcl");
 	   println(hLog,"Key: Standard 20Byte  Q: " + question + "  OCRA: " + ocra);
       }
       println(hLog,"");
