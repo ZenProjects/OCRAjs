@@ -12,7 +12,7 @@ function dechex(number) {
     .toString(16)
 }
 
-function doOCRATest (hLog) {
+function doOCRATest (hLog,shaEngine="sjcl") {
 
       var ocra = "";
       var seed = "";
@@ -23,7 +23,6 @@ function doOCRATest (hLog) {
       var question = "";
       var qHex = "";
       var timeStamp = "";
-	  var shaEngine = "sjcl";
 
       // PASS1234 is SHA1 hash of "1234"
       var PASS1234 = "7110eda4d09e062aa5e4a390b0a572ac0d2c0220";
