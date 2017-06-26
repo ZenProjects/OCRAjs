@@ -29,8 +29,8 @@ alert(ocra);  // ocra result
 
 This Javascript implementation are accompanied by a unit test that validates the implementation against the test vectors from the RFC.
 
-Clic on [test with SJCL HAMC-SHA engine](https://zenprojects.github.io/OCRAjs/test-sjcl.html) to execute test.
+Clic [her](https://zenprojects.github.io/OCRAjs/test-sjcl.html) to test with [SJCL HAMC-SHA engine](http://bitwiseshiftleft.github.io/sjcl/) to execute test.
 
-Clic on [test with jsSHA HAMC-SHA engine](https://zenprojects.github.io/OCRAjs/test-jsSHA.html) to execute test.
+Clic [her]( https://zenprojects.github.io/OCRAjs/test-jsSHA.html) to test with [jsSHA HAMC-SHA engine](https://caligatio.github.io/jsSHA/) to execute test.
 
 And compare with [reference test vector](https://tools.ietf.org/html/rfc6287#page-34).
