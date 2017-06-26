@@ -23,6 +23,7 @@ function doOCRATest (hLog) {
       var question = "";
       var qHex = "";
       var timeStamp = "";
+	  var shaEngine = "sjcl";
 
       // PASS1234 is SHA1 hash of "1234"
       var PASS1234 = "7110eda4d09e062aa5e4a390b0a572ac0d2c0220";
@@ -76,7 +77,7 @@ function doOCRATest (hLog) {
 			      password,
 			      sessionInformation,
 			      timeStamp,
-			      "sjcl");
+			      shaEngine);
 	   println(hLog,"Key: Standard 20Byte  Q: " + question + "  OCRA: " + ocra);
       }
       println(hLog,"");
@@ -99,7 +100,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog,"Key: Standard 32Byte  C: " + counter + "  Q: " + question + "  PIN(1234): ");
 	  println(hLog,password + "  OCRA: " + ocra);
       }
@@ -124,7 +126,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog,"Key: Standard 32Byte  Q: " + question + "  PIN(1234): ");
 	  println(hLog,password + "  OCRA: " + ocra);
       }
@@ -149,7 +152,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog,"Key: Standard 64Byte  C: " + counter + "  Q: " + question + "  OCRA: " + ocra);
       }
       println(hLog,"");
@@ -172,7 +176,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 
 	  println(hLog,"Key: Standard 64Byte  Q: " + question +"  T: " + timeStamp.toUpperCase() + "  OCRA: " + ocra);
       }
@@ -205,7 +210,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog, "(server)Key: Standard 32Byte  Q: " + question + "  OCRA: " + ocra);
 	  question = "SRV1111" + i + "CLI2222" + i;
 	  qHex = OCRA.bytesToHexStr(OCRA.str2ab(question));
@@ -215,7 +221,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog, "(client)Key: Standard 32Byte  Q: " + question + "  OCRA: " + ocra);
       }
       println(hLog,"");
@@ -243,7 +250,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog, "(server)Key: Standard 64Byte  Q: " + question + "  OCRA: " + ocra);
 	  ocraSuite = ocraSuite2;
 	  question = "SRV1111" + i + "CLI2222" + i;
@@ -255,7 +263,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog,"(client)Key: Standard 64Byte  Q: " + question);
 	  println(hLog,"P: " + password.toUpperCase() + "  OCRA: " + ocra);
       }
@@ -283,7 +292,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog, "Key: Standard 32Byte  Q(Signature challenge): " + question);
 	  println(hLog,"   OCRA: " + ocra);
       }
@@ -307,7 +317,8 @@ function doOCRATest (hLog) {
 			      qHex,
 			      password,
 			      sessionInformation,
-			      timeStamp);
+			      timeStamp,
+				  shaEngine);
 	  println(hLog, "Key: Standard 64Byte  Q(Signature challenge): " + question);
 	  println(hLog,"   T: " + timeStamp.toUpperCase() + "  OCRA: " + ocra);
       }
