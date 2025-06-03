@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  Web page to test Javascript Implementation of OCRA (RFC 6287).
+  https://datatracker.ietf.org/doc/html/rfc6287.
+
+  Copyright (c) 2025 Mathieu CARBONNEAUX. All rights reserved.
+
+  Redistribution and use in source and binary forms, with or without
+  modification, is permitted pursuant to, and subject to the license
+  terms contained in GNU Lesser General Public License (in file LICENSE.md of the project).
+-->
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCRA RFC 6287 - JavaScript Implementation</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+            line-height: 1.4;
+        }
+
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f1f3f4;
+            border-left: 4px solid #1a73e8;
+            border-radius: 4px;
+        }
+
+        .test-output {
+            background-color: #263238;
+            color: #e8eaf6;
+            padding: 20px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: pre-line;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .test-result {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .test-pass {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+
+        .test-fail {
+            background-color: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #f44336;
+        }
+
+        button {
+            background-color: #1a73e8;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            font-size: 14px;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #1557b0;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        button.debug-on {
+            background-color: #f44336 !important;
+        }
+
+        .summary {
+            text-align: center;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+        }
+
+        .summary.pass {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            border: 2px solid #4caf50;
+        }
+
+        .summary.fail {
+            background-color: #ffebee;
+            color: #c62828;
+            border: 2px solid #f44336;
+        }
+
+        .code-info {
+            background-color: #e3f2fd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background-color: #f5f5f5;
+            padding: 15px;
+            text-align: center;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1a73e8;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 11px;
+            border: 1px solid #ddd;
+        }
+
+        .header-info {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ffeaa7;
+            margin-bottom: 20px;
+        }
+
+        .success-info {
+            background-color: #d4edda;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 20px;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔐 OCRA RFC 6287</h1>
+    <h2 style="text-align: center; color: #666; margin-top: -20px;">JavaScript Implementation</h2>
+
+    <div class="success-info">
+        • Base on <a href="https://datatracker.ietf.org/doc/html/rfc6287">OCRA RFC 6287</a></br>
+        • <strong>Conditional debug:</strong> Use Debug button to control traces
+    </div>
+
+    <div class="section">
+        <h3>🧪 RFC 6287 Validation Tests</h3>
+        <p>Execute official test vectors to verify the implementation compliance.</p>
+        <p><small><em>💡 Tip: Enable Debug mode to see detailed OCRA calculation traces</em></small></p>
+
+        <button onclick="runRFCTests()" id="rfcButton">Run RFC Tests</button>
+        <button onclick="runJavaStyleTests()" id="javaButton">Run Java-Style Tests</button>
+        <button onclick="toggleDebug()" id="debugToggle">Debug: OFF</button>
+        <button onclick="clearOutput()">Clear</button>
+
+        <div id="testStats" class="stats" style="display: none;">
+            <div class="stat-box">
+                <div class="stat-number" id="totalTests">0</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="passedTests" style="color: #4caf50;">0</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="failedTests" style="color: #f44336;">0</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number" id="successRate">0%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+        </div>
+
+        <div id="testSummary"></div>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="section">
+        <h3>⚙️ Manual OCRA Test</h3>
+        <p>Direct test of the implementation with custom parameters.</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0;">
+            <div>
+                <label for="suite">OCRASuite:</label><br>
+                <select id="suite" style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+                    <option value="OCRA-1:HOTP-SHA1-6:QN08">OCRA-1:HOTP-SHA1-6:QN08</option>
+                    <option value="OCRA-1:HOTP-SHA256-8:C-QN08-PSHA1">OCRA-1:HOTP-SHA256-8:C-QN08-PSHA1</option>
+                    <option value="OCRA-1:HOTP-SHA256-8:QN08-PSHA1">OCRA-1:HOTP-SHA256-8:QN08-PSHA1</option>
+                    <option value="OCRA-1:HOTP-SHA512-8:C-QN08">OCRA-1:HOTP-SHA512-8:C-QN08</option>
+                    <option value="OCRA-1:HOTP-SHA512-8:QN08-T1M">OCRA-1:HOTP-SHA512-8:QN08-T1M</option>
+                    <option value="OCRA-1:HOTP-SHA256-8:QA08">OCRA-1:HOTP-SHA256-8:QA08</option>
+                    <option value="OCRA-1:HOTP-SHA512-8:QA08">OCRA-1:HOTP-SHA512-8:QA08</option>
+                    <option value="OCRA-1:HOTP-SHA512-8:QA08-PSHA1">OCRA-1:HOTP-SHA512-8:QA08-PSHA1</option>
+                    <option value="OCRA-1:HOTP-SHA512-8:QA10-T1M">OCRA-1:HOTP-SHA512-8:QA10-T1M</option>
+                </select>
+            </div>
+            <div>
+                <label for="key">Key (Hex String):</label><br>
+                <input type="text" id="key" value="3132333435363738393031323334353637383930"
+                       style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+            </div>
+            <div>
+                <label for="question">Question (BigInt):</label><br>
+                <input type="text" id="question" value="12345678"
+                       style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+            </div>
+            <div>
+                <label for="counter">Counter (BigInt):</label><br>
+                <input type="text" id="counter" placeholder="Optional"
+                       style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+            </div>
+            <div>
+                <label for="password">Password (leave empty for auto):</label><br>
+                <input type="text" id="password" placeholder="Auto for PSHA1: 1234"
+                       style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+            </div>
+            <div>
+                <label for="timestamp">Timestamp :</label><br>
+                <input type="text" id="timestamp" placeholder="Auto for T1M: 132d0b6"
+                       style="width: 100%; padding: 8px; font-family: 'Courier New', monospace;">
+            </div>
+        </div>
+
+        <button onclick="testManualOCRA()">Generate OCRA</button>
+        <button onclick="loadPresetValues()">Load RFC Values</button>
+        <div id="manualResult"></div>
+    </div>
+
+    <div class="section">
+        <h3>📊 Test Console (RFC Original Java Style)</h3>
+        <p>Test output in the style of the original Java code (TestOCRA.main()).</p>
+        <div id="consoleOutput" class="test-output" style="display: none;"></div>
+    </div>
+</div>
+
+<!-- add cryptojs or jssha lib to support old browser -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jsSHA/3.3.1/sha.js"></script> -->
+
+<!-- Include ocra scripts -->
+<script src="ocra.js"></script>
+<script src="ocra-tests.js"></script>
+
+<script>
+    // RFC keys corrected (according to erratum 5132)
+    const RFC_KEYS = {
+        SEED: "3132333435363738393031323334353637383930", // 40 chars = 20 bytes
+        SEED32: "3132333435363738393031323334353637383930" + "313233343536373839303132", // 64 chars = 32 bytes
+        SEED64: "3132333435363738393031323334353637383930" + // 40 chars (SEED repeated 3x)
+            "3132333435363738393031323334353637383930" + // 40 chars
+            "3132333435363738393031323334353637383930" + // 40 chars
+            "31323334" // 8 chars (4 additional bytes)
+        // Total = 40+40+40+8 = 128 chars exactly = 64 bytes
+    };
+
+    const PASS1234 = "7110eda4d09e062aa5e4a390b0a572ac0d2c0220";
+
+    let isTestRunning = false;
+    let debugMode = false; // Flag to control debug traces
+
+    function toggleDebug() {
+        debugMode = !debugMode;
+        window.debugMode = debugMode; // Sync with global variable
+        const button = document.getElementById('debugToggle');
+        button.textContent = 'Debug: ' + (debugMode ? 'ON' : 'OFF');
+        button.style.backgroundColor = debugMode ? '#f44336' : '#1a73e8';
+
+        if (debugMode) {
+            console.log('🐛 Debug mode enabled - OCRA traces visible');
+        } else {
+            console.log('🔇 Debug mode disabled - OCRA traces hidden');
+        }
+    }
+
+    function debugLog(...args) {
+        if (debugMode) {
+            console.log(...args);
+        }
+    }
+
+    // Make debugMode available globally for ocra.js
+    window.debugMode = debugMode;
+    window.debugLog = debugLog;
+
+    async function runRFCTests() {
+        if (isTestRunning) return;
+        isTestRunning = true;
+
+        const rfcButton = document.getElementById('rfcButton');
+        const resultsDiv = document.getElementById('testResults');
+        const summaryDiv = document.getElementById('testSummary');
+        const statsDiv = document.getElementById('testStats');
+
+        rfcButton.disabled = true;
+        rfcButton.textContent = 'Running tests...';
+        resultsDiv.innerHTML = '';
+        summaryDiv.innerHTML = '';
+        statsDiv.style.display = 'none';
+
+        let totalTests = 0;
+        let passedTests = 0;
+        let results = '';
+
+        try {
+            // Test 1: OCRA-1:HOTP-SHA1-6:QN08
+            results += '<h4>OCRA-1:HOTP-SHA1-6:QN08</h4>';
+
+            for (let i = 0; i < 10; i++) {
+                totalTests++;
+                const question = "" + i + i + i + i + i + i + i + i;
+                const qHex = BigInt(question).toString(16).toUpperCase();
+
+                const expected = ["237653", "243178", "653583", "740991", "608993",
+                    "388898", "816933", "224598", "750600", "294470"][i];
+
+                const result = await OCRA.generateOCRA("OCRA-1:HOTP-SHA1-6:QN08", RFC_KEYS.SEED, "", qHex, "", "", "");
+
+                const passed = result === expected;
+                if (passed) passedTests++;
+
+                results += '<div class="test-result ' + (passed ? 'test-pass' : 'test-fail') + '">';
+                results += 'Q:' + question + ' (hex:' + qHex + ') → Expected: ' + expected + ', Got: ' + result + ' ' + (passed ? '✅' : '❌');
+                results += '</div>';
+            }
+
+            // Test 2: OCRA-1:HOTP-SHA256-8:C-QN08-PSHA1
+            results += '<h4>OCRA-1:HOTP-SHA256-8:C-QN08-PSHA1</h4>';
+            const questionFixed = "12345678";
+            const qHexFixed = BigInt(questionFixed).toString(16).toUpperCase();
+
+            const expectedResults = ["65347737", "86775851", "78192410", "71565254", "10104329",
+                "65983500", "70069104", "91771096", "75011558", "08522129"];
+
+            for (let i = 0; i < 10; i++) {
+                totalTests++;
+                const counter = "" + i;
+                const expected = expectedResults[i];
+
+                const result = await OCRA.generateOCRA("OCRA-1:HOTP-SHA256-8:C-QN08-PSHA1",
+                    RFC_KEYS.SEED32, counter, qHexFixed, PASS1234, "", "");
+
+                const passed = result === expected;
+                if (passed) passedTests++;
+
+                results += '<div class="test-result ' + (passed ? 'test-pass' : 'test-fail') + '">';
+                results += 'C:' + counter + ' Q:' + questionFixed + ' (hex:' + qHexFixed + ') → Expected: ' + expected + ', Got: ' + result + ' ' + (passed ? '✅' : '❌');
+                results += '</div>';
+            }
+
+            // Test 3: OCRA-1:HOTP-SHA256-8:QN08-PSHA1
+            results += '<h4>OCRA-1:HOTP-SHA256-8:QN08-PSHA1</h4>';
+            const expectedResults2 = ["83238735", "01501458", "17957585", "86776967", "86807031"];
+
+            for (let i = 0; i < 5; i++) {
+                totalTests++;
+                const question = "" + i + i + i + i + i + i + i + i;
+                const qHex = BigInt(question).toString(16).toUpperCase();
+                const expected = expectedResults2[i];
+
+                const result = await OCRA.generateOCRA("OCRA-1:HOTP-SHA256-8:QN08-PSHA1",
+                    RFC_KEYS.SEED32, "", qHex, PASS1234, "", "");
+
+                const passed = result === expected;
+                if (passed) passedTests++;
+
+                results += '<div class="test-result ' + (passed ? 'test-pass' : 'test-fail') + '">';
+                results += 'Q:' + question + ' (hex:' + qHex + ') → Expected: ' + expected + ', Got: ' + result + ' ' + (passed ? '✅' : '❌');
+                results += '</div>';
+            }
+
+            // Test 4: OCRA-1:HOTP-SHA512-8:C-QN08 (CORRECTED KEYS)
+            results += '<h4>OCRA-1:HOTP-SHA512-8:C-QN08</h4>';
+            const expectedResults3 = ["07016083", "63947962", "70123924", "25341727", "33203315",
+                "34205738", "44343969", "51946085", "20403879", "31409299"];
+
+            for (let i = 0; i < 10; i++) {
+                totalTests++;
+                const question = "" + i + i + i + i + i + i + i + i;
+                const qHex = BigInt(question).toString(16).toUpperCase();
+                const counter = "0000" + i;
+                const expected = expectedResults3[i];
+
+                debugLog(`SHA512 Test ${i}: key length=${RFC_KEYS.SEED64.length}, question=${question}, qHex=${qHex}, counter=${counter}`);
+
+                const result = await OCRA.generateOCRA("OCRA-1:HOTP-SHA512-8:C-QN08",
+                    RFC_KEYS.SEED64, counter, qHex, "", "", "");
+
+                const passed = result === expected;
+                if (passed) passedTests++;
+
+                results += '<div class="test-result ' + (passed ? 'test-pass' : 'test-fail') + '">';
+                results += 'C:' + counter + ' Q:' + question + ' (hex:' + qHex + ') → Expected: ' + expected + ', Got: ' + result + ' ' + (passed ? '✅' : '❌');
+                results += '</div>';
+            }
+
+            // Test 5: OCRA-1:HOTP-SHA512-8:QN08-T1M
+            results += '<h4>OCRA-1:HOTP-SHA512-8:QN08-T1M</h4>';
+            const timeStamp = "132d0b6";
+            const expectedResults4 = ["95209754", "55907591", "22048402", "24218844", "36209546"];
+
+            for (let i = 0; i < 5; i++) {
+                totalTests++;
+                const question = "" + i + i + i + i + i + i + i + i;
+                const qHex = BigInt(question).toString(16).toUpperCase();
+                const expected = expectedResults4[i];
+
+                debugLog(`SHA512+T1M Test ${i}: timestamp=${timeStamp}, question=${question}, qHex=${qHex}`);
+
+                const result = await OCRA.generateOCRA("OCRA-1:HOTP-SHA512-8:QN08-T1M",
+                    RFC_KEYS.SEED64, "", qHex, "", "", timeStamp);
+
+                const passed = result === expected;
+                if (passed) passedTests++;
+
+                results += '<div class="test-result ' + (passed ? 'test-pass' : 'test-fail') + '">';
+                results += 'Q:' + question + ' (hex:' + qHex + ') T:' + timeStamp + ' → Expected: ' + expected + ', Got: ' + result + ' ' + (passed ? '✅' : '❌');
+                results += '</div>';
+            }
+
+            // Statistics
+            const successRate = totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0;
+
+            document.getElementById('totalTests').textContent = totalTests;
+            document.getElementById('passedTests').textContent = passedTests;
+            document.getElementById('failedTests').textContent = totalTests - passedTests;
+            document.getElementById('successRate').textContent = successRate + '%';
+            statsDiv.style.display = 'grid';
+
+            // Summary
+            const summaryClass = passedTests === totalTests ? 'pass' : 'fail';
+            summaryDiv.innerHTML = '<div class="summary ' + summaryClass + '">' +
+                'RFC 6287 Tests: ' + passedTests + '/' + totalTests + ' passed' +
+                (passedTests === totalTests ? ' - OCRA Javascript Implementation perfectly compliant! 🎉' : ' - Errors detected ⚠️') +
+                '</div>';
+
+            resultsDiv.innerHTML = results;
+
+        } catch (error) {
+            resultsDiv.innerHTML = '<div class="test-result test-fail">General error: ' + error.message + '</div>';
+        } finally {
+            isTestRunning = false;
+            rfcButton.disabled = false;
+            rfcButton.textContent = 'Run RFC Tests';
+        }
+    }
+
+    async function runJavaStyleTests() {
+        if (isTestRunning) return;
+        isTestRunning = true;
+
+        const javaButton = document.getElementById('javaButton');
+        const consoleDiv = document.getElementById('consoleOutput');
+
+        javaButton.disabled = true;
+        javaButton.textContent = 'Running Java Style...';
+        consoleDiv.style.display = 'block';
+        consoleDiv.innerHTML = 'Executing TestOCRA.main() tests...\n\n';
+
+        const originalLog = console.log;
+        console.log = function(...args) {
+            consoleDiv.innerHTML += args.join(' ') + '\n';
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            originalLog.apply(console, args);
+        };
+
+        try {
+            await TestOCRA.main();
+            consoleDiv.innerHTML += '\n✅ TestOCRA.main() tests completed successfully!';
+        } catch (error) {
+            consoleDiv.innerHTML += '\n❌ Error: ' + error.message;
+        } finally {
+            console.log = originalLog;
+            isTestRunning = false;
+            javaButton.disabled = false;
+            javaButton.textContent = 'Run Java-Style Tests';
+        }
+    }
+
+    async function testManualOCRA() {
+        const suite = document.getElementById('suite').value;
+        const key = document.getElementById('key').value;
+        const question = document.getElementById('question').value;
+        const counter = document.getElementById('counter').value;
+        const manualPassword = document.getElementById('password').value;
+        const manualTimestamp = document.getElementById('timestamp').value;
+        const resultDiv = document.getElementById('manualResult');
+
+        if (!key || !question) {
+            resultDiv.innerHTML = '<div class="test-result test-fail">Key and question required</div>';
+            return;
+        }
+
+        try {
+            let questionHex;
+            if (/^\d+$/.test(question)) {
+                questionHex = BigInt(question).toString(16).toUpperCase();
+            } else {
+                if (suite.includes('QA')) {
+                    questionHex = Array.from(new TextEncoder().encode(question))
+                        .map(byte => byte.toString(16).padStart(2, '0'))
+                        .join('').toUpperCase();
+                } else {
+                    questionHex = question.toUpperCase();
+                }
+            }
+
+            let password = manualPassword;
+            if (!password && suite.includes('PSHA1')) {
+                password = PASS1234; // SHA1 hash of "1234"
+            }
+
+            let timestamp = manualTimestamp;
+            if (!timestamp && suite.includes('T1M')) {
+                timestamp = "132d0b6"; // Default RFC value
+            }
+
+            const result = await OCRA.generateOCRA(suite, key, counter, questionHex, password, "", timestamp);
+
+            resultDiv.innerHTML = '<div class="test-result test-pass">' +
+                '🎯 Generated OCRA code: <strong>' + result + '</strong><br>' +
+                'Suite: ' + suite + '<br>' +
+                'Original question: ' + question + '<br>' +
+                'Question (hex): ' + questionHex + '<br>' +
+                'Counter: "' + counter + '"<br>' +
+                'Password: "' + (password ? (password === PASS1234 ? 'SHA1 hash of "1234"' : 'custom value') : 'none') + '"<br>' +
+                'Timestamp: "' + (timestamp || 'none') + '"' +
+                '</div>';
+
+        } catch (error) {
+            resultDiv.innerHTML = '<div class="test-result test-fail">❌ Error: ' + error.message + '</div>';
+        }
+    }
+
+    function loadPresetValues() {
+        // RFC 6287 example with SHA512
+        document.getElementById('suite').value = 'OCRA-1:HOTP-SHA512-8:C-QN08';
+        document.getElementById('key').value = RFC_KEYS.SEED64;
+        document.getElementById('question').value = '00000000';
+        document.getElementById('counter').value = '00000';
+        document.getElementById('password').value = '';
+        document.getElementById('timestamp').value = '';
+
+        const resultDiv = document.getElementById('manualResult');
+        resultDiv.innerHTML = '<div class="test-result test-pass">' +
+            '📋 RFC 6287 values loaded<br>' +
+            'Expected result: <strong>07016083</strong><br>' +
+            'Click "Generate OCRA" to test' +
+            '</div>';
+    }
+
+    function clearOutput() {
+        document.getElementById('testResults').innerHTML = '';
+        document.getElementById('testSummary').innerHTML = '';
+        document.getElementById('consoleOutput').innerHTML = '';
+        document.getElementById('consoleOutput').style.display = 'none';
+        document.getElementById('manualResult').innerHTML = '';
+        document.getElementById('testStats').style.display = 'none';
+    }
+
+    window.addEventListener('load', () => {
+        debugLog('🔐 OCRA RFC 6287 - Javascript Implementation loaded');
+        debugLog('📝 Ready for validation tests');
+    });
+</script>
+</body>
+</html>
