@@ -20,6 +20,10 @@ This implementation fully complies with RFC 6287 and passes all official test ve
   - Edge 13+
 - Work with : CryptoJS; jsSHA and Browser Web Crypto API
 
+# RFC Conformance Test
+
+Running RFC conformance Test Vectors [her](https://zenprojects.github.io/OCRAjs/test.html)
+
 # Quick Start
 
 ### Browser Usage
@@ -314,42 +318,6 @@ const code = await OCRA.generate(
 );
 ```
 
-# Testing
-
-### Running RFC Test Vectors [her](test.html)
-
-```javascript
-// Node.js
-const { runTestVectors } = require('./ocra-tests.js');
-await runTestVectors();
-
-// Browser
-<script src="ocra.js"></script>
-<script src="ocra-tests.js"></script>
-<script>runTestVectors();</script>
-```
-
-### Running Individual Tests
-
-```javascript
-const { runSingleTest } = require('./ocra-tests.js');
-await runSingleTest(0); // Run first test
-```
-
-### Example Output
-
-```
-=== OCRA RFC 6287 Test Vectors ===
-
-✓ Test 1: OCRA-1:HOTP-SHA1-6:QN08 - Challenge: 00000000 → 237653
-✓ Test 2: OCRA-1:HOTP-SHA1-6:QN08 - Challenge: 11111111 → 243178
-✓ Test 3: OCRA-1:HOTP-SHA1-6:QN08 - Challenge: 22222222 → 653583
-...
-
-=== Results ===
-Passed: 33/33
-Success rate: 100.0%
-```
 
 # Crypto Library Support
 
